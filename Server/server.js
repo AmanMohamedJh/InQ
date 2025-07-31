@@ -2,19 +2,24 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(cookieParser());
 
 // Routes
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
+
+// Auth routes
+app.use("/api/auth", require("./src/routes/authRoutes"));
 
 const PORT = process.env.PORT || 3000;
 

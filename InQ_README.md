@@ -29,12 +29,30 @@ InQ is designed to replace manual and inefficient queue management systems with 
 
 ## Core Features
 
+---
+
+## Authentication & Authorization (Backend)
+
+- **User Registration:** `/api/auth/register` (name, email, telephone, password, role)
+- **User Login:** `/api/auth/login` (JWT, HTTP-only cookie)
+- **Logout:** `/api/auth/logout` (clears session)
+- **Protected Routes:** Only accessible to authenticated users (via middleware)
+- **Role-Based Access:** Restricts certain actions to roles like `owner` or `admin`
+- **Password Security:** All passwords hashed with bcryptjs
+- **Validation:** All input validated with validator.js
+- **Session Security:** JWT tokens stored in HTTP-only cookies
+- **Example Protected Route:** `/api/auth/profile` (returns user info if logged in)
+- **Example Role Route:** `/api/auth/shop/add` (only `owner` can add shops)
+
 ### Customer
 
+- Register with name, email, telephone, and password
+- Log in securely (JWT, HTTP-only cookie)
 - Search shops by location or category
 - View live queue status and estimated wait time
 - Join and cancel queue slots remotely
 - Receive queue tokens
+- Access protected profile and actions
 
 ### Shop Owner (Admin)
 
@@ -42,6 +60,7 @@ InQ is designed to replace manual and inefficient queue management systems with 
 - View/manage daily queues per shop
 - Update customer statuses: served, skipped, no-show
 - Set opening hours and queue capacity
+- Role-based access for shop management and queue operations
 
 ---
 
