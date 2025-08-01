@@ -23,10 +23,76 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { useState } from "react";
+import axios from "axios";
+import { API } from "@/lib/api";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
+
+// Simple eye icon SVGs
+const EyeIcon = ({ open }: { open: boolean }) => (
+  open ? (
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+  ) : (
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-400"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.223-3.592M6.873 6.872A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.953 9.953 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" /></svg>
+  )
+);
+
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState("");
+
+  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    if (!selectedRole) {
+      setError("Please select a role");
+      setLoading(false);
+      return;
+    }
+    try {
+      try {
+        const payload = {
+          name,
+          email,
+          password,
+          telephone,
+          role: selectedRole,
+        };
+        console.log("Signup payload:", payload);
+        const res = await axios.post(
+          `${API}/auth/register`,
+          payload,
+          { withCredentials: true }
+        );
+        if (res.status === 201 || res.status === 200) {
+          setSuccess("Account created successfully! Redirecting to home...");
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1500);
+        } else {
+          setError(res.data?.error || "Signup failed");
+        }
+      } catch (err: any) {
+        setError(
+          err.response?.data?.error || err.message || "Signup failed"
+        );
+      }
+    } catch (err) {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black">
       <div className="flex items-center justify-center w-full">
@@ -41,7 +107,21 @@ export default function SignupPage() {
             </p>
           </CardHeader>
           <CardContent className="p-0">
-            <form className="flex flex-col gap-5">
+            {success && (
+              <Alert variant="default" className="mb-4">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <AlertTitle>Success!</AlertTitle>
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <form className="flex flex-col gap-5" onSubmit={handleSignup}>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="name" className="text-white font-semibold">
                   Name
@@ -52,6 +132,8 @@ export default function SignupPage() {
                   placeholder="Name"
                   required
                   className="bg-transparent border border-gray-700 text-white placeholder:text-gray-400"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -64,27 +146,44 @@ export default function SignupPage() {
                   placeholder="Email"
                   required
                   className="bg-transparent border border-gray-700 text-white placeholder:text-gray-400"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="password" className="text-white font-semibold">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Password"
-                  required
-                  minLength={8}
-                  className="bg-transparent border border-gray-700 text-white placeholder:text-gray-400"
-                />
+                <div className="relative">
+  <Input
+    id="password"
+    type={showPassword ? "text" : "password"}
+    placeholder="Password"
+    required
+    minLength={8}
+    className="bg-transparent border border-gray-700 text-white placeholder:text-gray-400 pr-10"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+  />
+  <button
+    type="button"
+    tabIndex={-1}
+    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-transparent"
+    onClick={() => setShowPassword((v) => !v)}
+    aria-label={showPassword ? "Hide password" : "Show password"}
+  >
+    <EyeIcon open={showPassword} />
+  </button>
+</div>
                 <span className="text-sm text-gray-400 mt-1">
                   Minimum 8 characters.
                 </span>
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="telephone" className="text-white font-semibold">Telephone</Label>
+                <Label htmlFor="telephone" className="text-white font-semibold">
+                  Telephone
+                </Label>
                 <Input
                   id="telephone"
                   name="telephone"
@@ -94,12 +193,16 @@ export default function SignupPage() {
                   placeholder="Enter your phone number"
                   required
                   className="bg-transparent border border-gray-700 text-white placeholder:text-gray-400"
+                  value={telephone}
+                  onChange={(e) => setTelephone(e.target.value)}
                 />
               </div>
 
               {/* Role selection field and drawer */}
               <div className="flex flex-col gap-2">
-                <Label className="text-white font-semibold">Join to InQ as ...</Label>
+                <Label className="text-white font-semibold">
+                  Join to InQ as ...
+                </Label>
                 <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
                   <DrawerTrigger asChild>
                     <button
@@ -107,53 +210,73 @@ export default function SignupPage() {
                       className="bg-transparent border border-gray-700 text-white rounded-lg px-4 py-3 text-left hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
                       onClick={() => setDrawerOpen(true)}
                     >
-                      {selectedRole ? `Joining as: ${selectedRole}` : "Select role (Owner or Customer)"}
+                      {selectedRole
+                        ? `Joining as: ${selectedRole}`
+                        : "Select role (Owner or Customer)"}
                     </button>
                   </DrawerTrigger>
                   <DrawerContent>
                     <DrawerHeader>
                       <DrawerTitle>Select your role</DrawerTitle>
-                      <DrawerDescription>Choose how you want to use InQ</DrawerDescription>
+                      <DrawerDescription>
+                        Choose how you want to use InQ
+                      </DrawerDescription>
                     </DrawerHeader>
                     <div className="flex flex-col gap-4 px-4">
                       <button
                         type="button"
-                        className={`border rounded-lg p-4 text-left transition hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 ${selectedRole === 'Owner' ? 'border-white bg-white/10' : 'border-gray-700 bg-transparent'} text-white`}
-                        onClick={() => setSelectedRole('Owner')}
+                        className={`border rounded-lg p-4 text-left transition hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 ${
+                          selectedRole === "Owner"
+                            ? "border-white bg-white/10"
+                            : "border-gray-700 bg-transparent"
+                        } text-white`}
+                        onClick={() => setSelectedRole("owner")}
                       >
                         <div className="font-bold text-lg mb-1">Owner</div>
                         <div className="text-gray-300 text-sm">
-                          Owner can add stores, clinics, or any institute where they can manage the crowd and queues.
+                          Owner can add stores, clinics, or any institute where
+                          they can manage the crowd and queues.
                         </div>
                       </button>
                       <button
                         type="button"
-                        className={`border rounded-lg p-4 text-left transition hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 ${selectedRole === 'Customer' ? 'border-white bg-white/10' : 'border-gray-700 bg-transparent'} text-white`}
-                        onClick={() => setSelectedRole('Customer')}
+                        className={`border rounded-lg p-4 text-left transition hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 ${
+                          selectedRole === "Customer"
+                            ? "border-white bg-white/10"
+                            : "border-gray-700 bg-transparent"
+                        } text-white`}
+                        onClick={() => setSelectedRole("customer")}
                       >
                         <div className="font-bold text-lg mb-1">Customer</div>
                         <div className="text-gray-300 text-sm">
-                          Here customer can join the queue in any place where InQ is available.
+                          Here customer can join the queue in any place where
+                          InQ is available.
                         </div>
                       </button>
                     </div>
                     <DrawerFooter>
-  <div className="flex flex-row gap-3 justify-end">
-    <Button
-      type="button"
-      className="px-6"
-      onClick={() => {
-        setDrawerOpen(false);
-      }}
-      disabled={!selectedRole}
-    >
-      Submit
-    </Button>
-    <DrawerClose asChild>
-      <Button type="button" variant="outline" className="px-6 text-gray-200 border-gray-400 hover:text-black">Cancel</Button>
-    </DrawerClose>
-  </div>
-</DrawerFooter>
+                      <div className="flex flex-row gap-3 justify-end">
+                        <Button
+                          type="button"
+                          className="px-6"
+                          onClick={() => {
+                            setDrawerOpen(false);
+                          }}
+                          disabled={!selectedRole}
+                        >
+                          Submit
+                        </Button>
+                        <DrawerClose asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="px-6 text-gray-200 border-gray-400 hover:text-black"
+                          >
+                            Cancel
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </DrawerFooter>
                   </DrawerContent>
                 </Drawer>
               </div>
@@ -180,9 +303,13 @@ export default function SignupPage() {
               <Button
                 type="submit"
                 className="w-full bg-white text-black font-semibold text-lg py-3 rounded-lg mt-4 hover:bg-gray-100 transition"
+                disabled={loading}
               >
-                Sign up
+                {loading ? "Signing up..." : "Sign up"}
               </Button>
+              {error && (
+                <div className="text-red-400 text-center mb-2">{error}</div>
+              )}
             </form>
             <div className="text-center mt-7 text-gray-400 text-base">
               Already have account?{" "}
